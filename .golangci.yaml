@@ -27,6 +27,11 @@ linters:
       - third_party$
       - builtin$
       - examples$
+    rules:
+      - linters:
+          - bodyclose
+        path: _test\.go$
+        source: "GetBreaker\\(.*\\)|ExecuteWithBreaker\\(.*\\)||NewCircuitBreaker\\[.*\\]\\(.*\\)"
 issues:
   new-from-merge-base: main
 formatters:

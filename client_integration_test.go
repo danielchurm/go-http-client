@@ -299,7 +299,7 @@ func TestIntegration_CircuitBreakerTrips_ShouldTrip(t *testing.T) {
 		t.Fatalf("failed to create client: %v", err)
 	}
 
-	breaker := client.GetBreaker(breakerKey) //nolint:bodyclose
+	breaker := client.GetBreaker(breakerKey)
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, server.URL, nil)
 	if err != nil {
@@ -395,7 +395,7 @@ func TestIntegration_CircuitBreakerTrips_NoShouldTrip(t *testing.T) {
 		t.Fatalf("failed to create client: %v", err)
 	}
 
-	breaker := client.GetBreaker(breakerKey) //nolint:bodyclose
+	breaker := client.GetBreaker(breakerKey)
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, server.URL, nil)
 	if err != nil {
@@ -492,7 +492,7 @@ func TestIntegration_ExecuteWithBreakerHelper(t *testing.T) {
 		t.Fatalf("failed to create request: %v", err)
 	}
 
-	_, err = client.ExecuteWithBreaker(testKey, func() (*http.Response, error) { //nolint:bodyclose
+	_, err = client.ExecuteWithBreaker(testKey, func() (*http.Response, error) {
 		return client.Do(req)
 	})
 
@@ -510,7 +510,7 @@ func TestIntegration_ExecuteWithBreakerHelper(t *testing.T) {
 		t.Fatalf("failed to create request: %v", err)
 	}
 
-	_, err = client.ExecuteWithBreaker(testKey, func() (*http.Response, error) { //nolint:bodyclose
+	_, err = client.ExecuteWithBreaker(testKey, func() (*http.Response, error) {
 		return client.Do(req2)
 	})
 
@@ -523,7 +523,7 @@ func TestIntegration_ExecuteWithBreakerHelper(t *testing.T) {
 		t.Errorf("expected still 1 call (blocked by breaker), got %d", callCount)
 	}
 
-	breaker := client.GetBreaker(testKey) //nolint:bodyclose
+	breaker := client.GetBreaker(testKey)
 	if breaker.State() != gobreaker.StateOpen {
 		t.Errorf("expected circuit breaker to be open, got %s", breaker.State())
 	}

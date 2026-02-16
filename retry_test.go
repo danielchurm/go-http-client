@@ -300,7 +300,7 @@ func TestRetryTransport_MaxRetriesRespected(t *testing.T) {
 			defer cancel()
 			req = req.WithContext(ctx)
 
-			_, err := transport.RoundTrip(req) //nolint:bodyclose
+			_, err := transport.RoundTrip(req)
 
 			if err == nil {
 				t.Fatalf("expected error, got nil")
@@ -379,7 +379,7 @@ func TestRetryTransport_ContextCancellation(t *testing.T) {
 	req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://example.com", nil)
 	req = req.WithContext(ctx)
 
-	resp, err := transport.RoundTrip(req) //nolint:bodyclose
+	resp, err := transport.RoundTrip(req)
 
 	if err == nil {
 		t.Fatalf("expected context cancellation error, got nil")
@@ -779,7 +779,7 @@ func TestRetryTransport_RequestBodyReadError(t *testing.T) {
 	})
 
 	req, _ := http.NewRequestWithContext(t.Context(), http.MethodPut, "http://example.com", failingReader)
-	_, err := transport.RoundTrip(req) //nolint:bodyclose
+	_, err := transport.RoundTrip(req)
 
 	if err == nil {
 		t.Errorf("expected error reading request body, got nil")

@@ -225,7 +225,7 @@ func TestNewClient_WithCircuitBreaker(t *testing.T) {
 	}
 
 	// Verify the breaker was registered
-	breaker := client.GetBreaker(testKey) //nolint:bodyclose
+	breaker := client.GetBreaker(testKey)
 	if breaker == nil {
 		t.Errorf("expected breaker to be registered")
 	}
@@ -261,8 +261,8 @@ func TestNewClient_WithMultipleCircuitBreakers(t *testing.T) {
 	}
 
 	// Verify both breakers were registered
-	breaker1 := client.GetBreaker(key1) //nolint:bodyclose
-	breaker2 := client.GetBreaker(key2) //nolint:bodyclose
+	breaker1 := client.GetBreaker(key1)
+	breaker2 := client.GetBreaker(key2)
 
 	if breaker1 == nil {
 		t.Errorf("expected breaker 1 to be registered")
@@ -303,8 +303,8 @@ func TestNewClient_WithCircuitBreakers(t *testing.T) {
 	}
 
 	// Verify both breakers were registered
-	breaker1 := client.GetBreaker(key1) //nolint:bodyclose
-	breaker2 := client.GetBreaker(key2) //nolint:bodyclose
+	breaker1 := client.GetBreaker(key1)
+	breaker2 := client.GetBreaker(key2)
 
 	if breaker1 == nil {
 		t.Errorf("expected breaker 1 to be registered")
@@ -355,7 +355,7 @@ func TestNewClient_AllOptionsEnabled(t *testing.T) {
 		t.Errorf("expected timeout 30s, got %v", client.Timeout)
 	}
 
-	breaker := client.GetBreaker(breakerKey) //nolint:bodyclose
+	breaker := client.GetBreaker(breakerKey)
 	if breaker == nil {
 		t.Errorf("expected circuit breaker to be registered")
 	}

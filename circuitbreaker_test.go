@@ -234,13 +234,13 @@ func TestGetBreaker_Success(t *testing.T) {
 	client := &HTTPClient{
 		breakers: map[CircuitBreakerKey]*circuitBreakerConfig{
 			testKey: {
-				breaker:    gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}), //nolint:bodyclose
+				breaker:    gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}),
 				shouldTrip: func(int) bool { return true },
 			},
 		},
 	}
 
-	breaker := client.GetBreaker(testKey) //nolint:bodyclose
+	breaker := client.GetBreaker(testKey)
 
 	if breaker == nil {
 		t.Errorf("expected breaker, got nil")
@@ -258,7 +258,7 @@ func TestGetBreaker_NotConfigured(t *testing.T) {
 		}
 	}()
 
-	client.GetBreaker("non-existent") //nolint:bodyclose
+	client.GetBreaker("non-existent")
 	t.Errorf("expected panic")
 }
 
@@ -268,7 +268,7 @@ func TestShouldTrip_WithDefaultBehavior(t *testing.T) {
 	client := &HTTPClient{
 		breakers: map[CircuitBreakerKey]*circuitBreakerConfig{
 			testKey: {
-				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}), //nolint:bodyclose
+				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}),
 				shouldTrip: func(statusCode int) bool {
 					return statusCode >= http.StatusInternalServerError
 				},
@@ -307,7 +307,7 @@ func TestShouldTrip_WithCustomBehavior(t *testing.T) {
 	client := &HTTPClient{
 		breakers: map[CircuitBreakerKey]*circuitBreakerConfig{
 			testKey: {
-				breaker:    gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}), //nolint:bodyclose
+				breaker:    gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}),
 				shouldTrip: customShouldTrip,
 			},
 		},
@@ -400,7 +400,7 @@ func TestExecuteWithBreaker_Success(t *testing.T) {
 	client := &HTTPClient{
 		breakers: map[CircuitBreakerKey]*circuitBreakerConfig{
 			testKey: {
-				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}), //nolint:bodyclose
+				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}),
 				shouldTrip: func(statusCode int) bool {
 					return statusCode >= 500
 				},
@@ -408,7 +408,7 @@ func TestExecuteWithBreaker_Success(t *testing.T) {
 		},
 	}
 
-	resp, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) { //nolint:bodyclose
+	resp, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) {
 		return &http.Response{
 			StatusCode: http.StatusOK,
 		}, nil
@@ -429,7 +429,7 @@ func TestExecuteWithBreaker_NetworkError(t *testing.T) {
 	client := &HTTPClient{
 		breakers: map[CircuitBreakerKey]*circuitBreakerConfig{
 			testKey: {
-				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}), //nolint:bodyclose
+				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}),
 				shouldTrip: func(statusCode int) bool {
 					return statusCode >= 500
 				},
@@ -439,7 +439,7 @@ func TestExecuteWithBreaker_NetworkError(t *testing.T) {
 
 	expectedErr := http.ErrServerClosed
 
-	_, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) { //nolint:bodyclose
+	_, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) {
 		return nil, expectedErr
 	})
 
@@ -454,7 +454,7 @@ func TestExecuteWithBreaker_TripsOnBadStatus(t *testing.T) {
 	client := &HTTPClient{
 		breakers: map[CircuitBreakerKey]*circuitBreakerConfig{
 			testKey: {
-				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}), //nolint:bodyclose
+				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}),
 				shouldTrip: func(statusCode int) bool {
 					return statusCode >= 500
 				},
@@ -462,7 +462,7 @@ func TestExecuteWithBreaker_TripsOnBadStatus(t *testing.T) {
 		},
 	}
 
-	resp, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) { //nolint:bodyclose
+	resp, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) {
 		return &http.Response{
 			StatusCode: http.StatusServiceUnavailable,
 		}, nil
@@ -483,7 +483,7 @@ func TestExecuteWithBreaker_DoesNotTripOnGoodStatus(t *testing.T) {
 	client := &HTTPClient{
 		breakers: map[CircuitBreakerKey]*circuitBreakerConfig{
 			testKey: {
-				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}), //nolint:bodyclose
+				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}),
 				shouldTrip: func(statusCode int) bool {
 					return statusCode >= 500
 				},
@@ -491,7 +491,7 @@ func TestExecuteWithBreaker_DoesNotTripOnGoodStatus(t *testing.T) {
 		},
 	}
 
-	resp, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) { //nolint:bodyclose
+	resp, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) {
 		return &http.Response{
 			StatusCode: http.StatusNotFound,
 		}, nil
@@ -512,7 +512,7 @@ func TestExecuteWithBreaker_CustomShouldTrip(t *testing.T) {
 	client := &HTTPClient{
 		breakers: map[CircuitBreakerKey]*circuitBreakerConfig{
 			testKey: {
-				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}), //nolint:bodyclose
+				breaker: gobreaker.NewCircuitBreaker[*http.Response](gobreaker.Settings{}),
 				shouldTrip: func(statusCode int) bool {
 					return statusCode == 429 || statusCode >= 500
 				},
@@ -521,7 +521,7 @@ func TestExecuteWithBreaker_CustomShouldTrip(t *testing.T) {
 	}
 
 	// Test 429 trips
-	_, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) { //nolint:bodyclose
+	_, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) {
 		return &http.Response{StatusCode: http.StatusTooManyRequests}, nil
 	})
 
@@ -530,7 +530,7 @@ func TestExecuteWithBreaker_CustomShouldTrip(t *testing.T) {
 	}
 
 	// Test 404 doesn't trip
-	resp, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) { //nolint:bodyclose
+	resp, err := client.ExecuteWithBreaker(testKey, func() (*http.Response, error) {
 		return &http.Response{StatusCode: http.StatusNotFound}, nil
 	})
 
@@ -554,7 +554,7 @@ func TestExecuteWithBreaker_NotConfigured(t *testing.T) {
 		}
 	}()
 
-	_, _ = client.ExecuteWithBreaker("non-existent", func() (*http.Response, error) { //nolint:bodyclose
+	_, _ = client.ExecuteWithBreaker("non-existent", func() (*http.Response, error) {
 		return &http.Response{StatusCode: http.StatusOK}, nil
 	})
 
