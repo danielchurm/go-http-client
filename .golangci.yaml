@@ -1,0 +1,40 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - exptostd
+    - ginkgolinter
+    - govet
+    - ineffassign
+    - noctx
+    - staticcheck
+    - unused
+    - usestdlibvars
+    - usetesting
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  new-from-merge-base: main
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

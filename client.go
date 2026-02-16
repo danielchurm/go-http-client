@@ -1,82 +1,123 @@
 package go_http_client
 
 import (
-	"httpclient/circuitbreaker"
+	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/JSainsburyPLC/go-logrus-wrapper/v2/roundtripper"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
-var (
-	DefaultTimeout = 30 * time.Second
+// HTTPClient is a wrapper around http.Client that provides additional features such as:
+//   - Automatic retries with exponential backoff for transient failures
+//   - Configurable static and context-based headers
+//   - Circuit breakers for specified endpoints
+//   - New Relic instrumentation for monitoring and observability
+type HTTPClient struct {
+	*http.Client
+	breakers map[CircuitBreakerKey]*circuitBreakerConfig
+}
 
-	Default = ClientBuilder{
-		Timeout:              DefaultTimeout,
-		NewRelicEnabled:      true,
-		SendSmartShopHeaders: true,
-		CircuitBreaker: CircuitBreakerSettings{
-			Enabled:  true,
-			Settings: circuitbreaker.Settings{},
-		},
+type config struct {
+	timeout                time.Duration
+	newRelicEnabled        bool
+	retrySettings          *RetrySettings
+	headerSettings         *HeaderSettings
+	poolSettings           *PoolSettings
+	circuitBreakerSettings map[CircuitBreakerKey]CircuitBreakerSettings
+}
+
+// NewClient creates a new HTTPClient with the specified timeout and optional configurations.
+//
+// The timeout parameter sets the maximum duration for the entire request, including all retries
+// and backoff delays. It must be greater than 0.
+//
+// By default, NewClient integrates with New Relic for monitoring. Use WithoutNewRelic to disable.
+//
+// Available options:
+//   - WithRetries: Enable automatic retries with exponential backoff
+//   - WithHeaders: Configure static and context-based headers
+//   - WithCircuitBreakers: Configure circuit breakers for endpoints
+//   - WithCircuitBreaker: Configure a single circuit breaker for a client
+//   - WithConnectionPool: Configure connection pooling settings
+//   - WithoutNewRelic: Disable New Relic instrumentation (not recommended)
+//
+// Example usage:
+//
+//	client, err := NewClient(
+//	    30 * time.Second,
+//	    WithRetries(RetrySettings{
+//	        MaxRetries:      3,
+//	        InitialInterval: 500 * time.Millisecond,
+//	    }),
+//	    WithHeaders(HeaderSettings{
+//	        ContextHeaders: map[string]any{
+//	            "X-Request-ID": CtxKeyRequestID,
+//	        },
+//	        StaticHeaders: map[string]string{
+//	            "X-API-Key": "secret",
+//	        },
+//	    }),
+//	    WithCircuitBreaker(CircuitBreakerSettings{
+//	        Key: BreakerUserService,
+//	        Settings: gobreaker.Settings{
+//	            Name:        string(BreakerUserService),
+//	            MaxRequests: 10,
+//	            Interval:    60 * time.Second,
+//	            Timeout:     30 * time.Second,
+//	            ReadyToTrip: func(counts gobreaker.Counts) bool {
+//	                return counts.ConsecutiveFailures >= 5
+//	            },
+//	        },
+//	        ShouldTrip: func(code int) bool { return code >= 500 },
+//	    }),
+//	)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+func NewClient(timeout time.Duration, opts ...Option) (*HTTPClient, error) {
+	if timeout <= 0 {
+		return nil, fmt.Errorf("timeout must be greater than 0, got: %v", timeout)
 	}
-)
 
-type CircuitBreakerSettings struct {
-	Enabled  bool
-	Settings circuitbreaker.Settings
-}
-
-type ClientBuilder struct {
-	Timeout              time.Duration
-	NewRelicEnabled      bool
-	SendSmartShopHeaders bool
-	CircuitBreaker       CircuitBreakerSettings
-}
-
-func (cb ClientBuilder) WithTimeout(timeout time.Duration) ClientBuilder {
-	cb.Timeout = timeout
-	return cb
-}
-
-func (cb ClientBuilder) DisableNewRelic() ClientBuilder {
-	cb.NewRelicEnabled = false
-	return cb
-}
-
-func (cb ClientBuilder) DisableSmartShopHeaders() ClientBuilder {
-	cb.SendSmartShopHeaders = false
-	return cb
-}
-
-func (cb ClientBuilder) DisableCircuitBreaker() ClientBuilder {
-	cb.CircuitBreaker.Enabled = false
-	return cb
-}
-
-func (cb ClientBuilder) WithCircuitBreakerSettings(settings circuitbreaker.Settings) ClientBuilder {
-	cb.CircuitBreaker.Enabled = true
-	cb.CircuitBreaker.Settings = settings
-	return cb
-}
-
-func (cb ClientBuilder) Build() *http.Client {
-	client := &http.Client{
-		Timeout: cb.Timeout,
+	cfg := &config{
+		timeout:                timeout,
+		newRelicEnabled:        true,
+		circuitBreakerSettings: make(map[CircuitBreakerKey]CircuitBreakerSettings),
 	}
 
-	if cb.NewRelicEnabled {
-		client.Transport = newrelic.NewRoundTripper(client.Transport)
+	for _, o := range opts {
+		o(cfg)
 	}
 
-	if cb.SendSmartShopHeaders {
-		client.Transport = roundtripper.Wrap(client.Transport)
+	baseTransport := newBaseTransport(cfg.poolSettings)
+
+	var transport http.RoundTripper = baseTransport
+
+	if cfg.headerSettings != nil {
+		transport = newHeaderTransport(transport, *cfg.headerSettings)
 	}
 
-	if cb.CircuitBreaker.Enabled {
-		client.Transport = circuitbreaker.NewRoundTripper(client.Transport, cb.CircuitBreaker.Settings)
+	if cfg.newRelicEnabled {
+		transport = newrelic.NewRoundTripper(transport)
 	}
 
-	return client
+	if cfg.retrySettings != nil {
+		if err := validateRetrySettings(*cfg.retrySettings, timeout); err != nil {
+			return nil, fmt.Errorf("failed to validate retry settings: %w", err)
+		}
+		transport = newRetryTransport(transport, *cfg.retrySettings)
+	}
+
+	breakers := newCircuitBreakers(cfg.circuitBreakerSettings)
+
+	httpClient := &http.Client{
+		Transport: transport,
+		Timeout:   cfg.timeout,
+	}
+
+	return &HTTPClient{
+		Client:   httpClient,
+		breakers: breakers,
+	}, nil
 }
